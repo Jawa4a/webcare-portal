@@ -1,0 +1,64 @@
+name: webcare-portal-test
+
+services:
+  postgres-test:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: webcare_test
+      POSTGRES_USER: webcare_test
+      POSTGRES_PASSWORD: webcare_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U webcare_test -d webcare_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    tmpfs:
+      - /var/lib/postgresql/data
+    networks:
+      - test-network
+
+  test-site:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./test-sites/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./test-sites/site:/usr/share/nginx/html:ro
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/issues/"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    networks:
+      - test-network
+
+  backend-tests:
+    image: maven:3.9.9-eclipse-temurin-21-alpine
+    working_dir: /workspace
+    command: ["mvn", "-B", "-Pintegration", "verify"]
+    environment:
+      DB_URL: jdbc:postgresql://postgres-test:5432/webcare_test
+      DB_USERNAME: webcare_test
+      DB_PASSWORD: webcare_test
+      AUDIT_ALLOW_PRIVATE_ADDRESSES: "true"
+      AUDIT_MAX_RUNTIME: 20s
+      AUDIT_CONNECT_TIMEOUT: 2s
+      AUDIT_REQUEST_TIMEOUT: 3s
+      BOOTSTRAP_ADMIN_PASSWORD: WebcareAdmin!2026
+      BOOTSTRAP_SPECIALIST_PASSWORD: WebcareSpecialist!2026
+      BOOTSTRAP_VIEWER_PASSWORD: WebcareViewer!2026
+    volumes:
+      - ./backend:/workspace
+      - maven_test_cache:/root/.m2
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      test-site:
+        condition: service_healthy
+    networks:
+      - test-network
+
+volumes:
+  maven_test_cache:
+
+networks:
+  test-network:
+    driver: bridge

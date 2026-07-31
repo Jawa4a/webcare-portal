@@ -1,0 +1,50 @@
+name: WebCare CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Backend unit tests
+        working-directory: backend
+        run: mvn -B test
+      - name: Frontend production build
+        working-directory: frontend
+        run: npm ci && npm run build
+
+  postgres-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Full REST workflow against PostgreSQL and controlled site
+        run: docker compose -f compose.test.yaml up --abort-on-container-exit --exit-code-from backend-tests
+      - name: Test logs
+        if: failure()
+        run: docker compose -f compose.test.yaml logs
+      - name: Stop test environment
+        if: always()
+        run: docker compose -f compose.test.yaml down --volumes --remove-orphans
+
+  production-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build production images
+        run: docker compose build

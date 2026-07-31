@@ -1,0 +1,69 @@
+spring:
+  application:
+    name: webcare-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/webcare}
+    username: ${DB_USERNAME:webcare}
+    password: ${DB_PASSWORD:webcare}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: strict
+        secure: ${SESSION_COOKIE_SECURE:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+info:
+  app:
+    name: WebCare Portal API
+    stage: mvp-ready
+
+webcare:
+  audit:
+    allow-private-addresses: ${AUDIT_ALLOW_PRIVATE_ADDRESSES:false}
+    max-runtime: ${AUDIT_MAX_RUNTIME:60s}
+    connect-timeout: ${AUDIT_CONNECT_TIMEOUT:5s}
+    request-timeout: ${AUDIT_REQUEST_TIMEOUT:10s}
+    max-response-bytes: ${AUDIT_MAX_RESPONSE_BYTES:2097152}
+    max-redirects: ${AUDIT_MAX_REDIRECTS:5}
+  bootstrap:
+    admin:
+      email: ${BOOTSTRAP_ADMIN_EMAIL:admin@webcare.local}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD:WebcareAdmin!2026}
+      name: ${BOOTSTRAP_ADMIN_NAME:Анна Коваль}
+    specialist:
+      email: ${BOOTSTRAP_SPECIALIST_EMAIL:specialist@webcare.local}
+      password: ${BOOTSTRAP_SPECIALIST_PASSWORD:WebcareSpecialist!2026}
+      name: ${BOOTSTRAP_SPECIALIST_NAME:Максим Бондаренко}
+    viewer:
+      email: ${BOOTSTRAP_VIEWER_EMAIL:viewer@webcare.local}
+      password: ${BOOTSTRAP_VIEWER_PASSWORD:WebcareViewer!2026}
+      name: ${BOOTSTRAP_VIEWER_NAME:Олена Шевченко}

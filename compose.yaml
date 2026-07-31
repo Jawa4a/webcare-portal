@@ -1,0 +1,81 @@
+name: webcare-portal
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-webcare}
+      POSTGRES_USER: ${POSTGRES_USER:-webcare}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-webcare}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - portal
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-webcare}
+      DB_USERNAME: ${POSTGRES_USER:-webcare}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-webcare}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      AUDIT_ALLOW_PRIVATE_ADDRESSES: ${AUDIT_ALLOW_PRIVATE_ADDRESSES:-false}
+      AUDIT_MAX_RUNTIME: ${AUDIT_MAX_RUNTIME:-60s}
+      AUDIT_CONNECT_TIMEOUT: ${AUDIT_CONNECT_TIMEOUT:-5s}
+      AUDIT_REQUEST_TIMEOUT: ${AUDIT_REQUEST_TIMEOUT:-10s}
+      AUDIT_MAX_RESPONSE_BYTES: ${AUDIT_MAX_RESPONSE_BYTES:-2097152}
+      AUDIT_MAX_REDIRECTS: ${AUDIT_MAX_REDIRECTS:-5}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-admin@webcare.local}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-WebcareAdmin!2026}
+      BOOTSTRAP_SPECIALIST_EMAIL: ${BOOTSTRAP_SPECIALIST_EMAIL:-specialist@webcare.local}
+      BOOTSTRAP_SPECIALIST_PASSWORD: ${BOOTSTRAP_SPECIALIST_PASSWORD:-WebcareSpecialist!2026}
+      BOOTSTRAP_VIEWER_EMAIL: ${BOOTSTRAP_VIEWER_EMAIL:-viewer@webcare.local}
+      BOOTSTRAP_VIEWER_PASSWORD: ${BOOTSTRAP_VIEWER_PASSWORD:-WebcareViewer!2026}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    networks:
+      - portal
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - portal
+
+volumes:
+  postgres_data:
+
+networks:
+  portal:
+    driver: bridge
