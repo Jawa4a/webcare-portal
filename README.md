@@ -13,8 +13,8 @@ docker compose up --build
 После запуска доступны:
 
 - интерфейс: <http://localhost:3000>;
-- API состояния: <http://localhost:8080/api/health>;
-- технический health-check: <http://localhost:8080/actuator/health>;
+- API состояния: <http://localhost:3000/api/health>;
+- технический health-check: <http://localhost:3000/actuator/health>;
 - PostgreSQL: `localhost:5432`.
 
 Для собственных параметров скопируйте `.env.example` в `.env` и замените необходимые значения. Файл `.env` не попадает в Git.
