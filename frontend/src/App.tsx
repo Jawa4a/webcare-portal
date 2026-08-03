@@ -2,6 +2,7 @@ import {
   useCallback, useEffect, useRef, useState, type AnchorHTMLAttributes, type FormEvent,
   type MouseEvent as ReactMouseEvent, type ReactNode,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { api, ApiRequestError } from './api'
 import type {
   Audit, AuditComparison, AuditPage, AuditResults, AuditStatus, Dashboard, DashboardSite, Finding,
@@ -407,6 +408,19 @@ function WebsiteEditor({ website, onClose, onSave }: { website: Website | null; 
   const [saving, setSaving] = useState(false)
   const title = website ? 'Изменить сайт' : 'Добавить сайт'
 
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [onClose])
+
   async function submit(event: FormEvent) {
     event.preventDefault()
     setError('')
@@ -427,7 +441,7 @@ function WebsiteEditor({ website, onClose, onSave }: { website: Website | null; 
     }
   }
 
-  return (
+  return createPortal(
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose() }}>
       <section className="modal" role="dialog" aria-modal="true" aria-labelledby="website-editor-title">
         <div className="modal-heading"><div><span className="section-kicker">Безопасный реестр</span><h2 id="website-editor-title">{title}</h2></div><button className="icon-button" type="button" onClick={onClose} aria-label="Закрыть форму">×</button></div>
@@ -444,7 +458,8 @@ function WebsiteEditor({ website, onClose, onSave }: { website: Website | null; 
           <div className="modal-actions"><button className="secondary-button" type="button" onClick={onClose}>Отмена</button><button className="primary-button" type="submit" disabled={saving}>{saving ? 'Проверяем адрес…' : website ? 'Сохранить' : 'Добавить сайт'}</button></div>
         </form>
       </section>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
