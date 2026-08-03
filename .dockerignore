@@ -2,7 +2,7 @@
 .gitignore
 .idea
 .vscode
-.env
+.env*
 *.docx
 frontend/node_modules
 frontend/dist

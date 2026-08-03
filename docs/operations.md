@@ -11,6 +11,8 @@ docker compose logs --tail 200 backend
 - readiness/liveness: <http://localhost:3000/actuator/health>;
 - краткий API health: <http://localhost:3000/api/health>.
 
+В production используйте HTTPS-домен и команды с `--env-file .env.prod -f compose.prod.yaml`. Полная последовательность приведена в [руководстве по публичному развёртыванию](deployment.md).
+
 ## Безопасный перезапуск
 
 ```bash
@@ -34,6 +36,8 @@ docker compose exec -T postgres pg_dump -U webcare -d webcare --clean --if-exist
 ```
 
 Параметры пользователя и базы должны соответствовать `.env`.
+
+Для production-контура применяйте команду резервного копирования из `docs/deployment.md`; она получает имя базы и пользователя непосредственно из окружения контейнера.
 
 ## Типичные неисправности
 

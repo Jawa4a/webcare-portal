@@ -13,8 +13,8 @@ docker compose up --build
 После запуска доступны:
 
 - интерфейс: <http://localhost:3000>;
-- API состояния: <http://localhost:8080/api/health>;
-- технический health-check: <http://localhost:8080/actuator/health>;
+- API состояния: <http://localhost:3000/api/health>;
+- технический health-check: <http://localhost:3000/actuator/health>;
 - PostgreSQL: `localhost:5432`.
 
 Для собственных параметров скопируйте `.env.example` в `.env` и замените необходимые значения. Файл `.env` не попадает в Git.
@@ -37,6 +37,10 @@ docker compose down
 
 Данные PostgreSQL сохраняются в именованном Docker-томе. Для удаления данных явно выполните `docker compose down --volumes`.
 
+## Публичное развёртывание
+
+Для Linux VM подготовлен отдельный production-контур с Caddy и автоматическим HTTPS. Он публикует только порты `80/443`; PostgreSQL, backend и frontend остаются во внутренних Docker-сетях. Используйте `compose.prod.yaml`, заполните `.env.prod` по шаблону `.env.prod.example` и следуйте [руководству по развёртыванию на Azure или DigitalOcean](docs/deployment.md).
+
 ## Документация
 
 - [Требования и пользовательские сценарии](docs/requirements.md)
@@ -48,6 +52,7 @@ docker compose down
 - [Реализация четвёртого этапа](docs/stage-4.md)
 - [Реализация пятого этапа](docs/stage-5.md)
 - [Установка и обновление](docs/installation.md)
+- [Публичное развёртывание](docs/deployment.md)
 - [Руководство пользователя](docs/user-guide.md)
 - [Автоматические тесты](docs/testing.md)
 - [Эксплуатация и диагностика](docs/operations.md)
@@ -61,6 +66,7 @@ infra/         конфигурация reverse proxy
 docs/          требования и проектные решения
 test-sites/    место для контролируемых сценариев проверки аудита
 compose.yaml   единый запуск frontend, backend и PostgreSQL
+compose.prod.yaml  production-запуск с Caddy и HTTPS
 ```
 
 ## Статус MVP

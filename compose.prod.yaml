@@ -1,0 +1,122 @@
+name: webcare-portal-prod
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-webcare}"
+      POSTGRES_USER: "${POSTGRES_USER:-webcare}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.prod}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - database
+    logging: *default-logging
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    init: true
+    environment:
+      DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB:-webcare}"
+      DB_USERNAME: "${POSTGRES_USER:-webcare}"
+      DB_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.prod}"
+      SESSION_COOKIE_SECURE: "true"
+      AUDIT_ALLOW_PRIVATE_ADDRESSES: "false"
+      AUDIT_MAX_RUNTIME: "${AUDIT_MAX_RUNTIME:-60s}"
+      AUDIT_CONNECT_TIMEOUT: "${AUDIT_CONNECT_TIMEOUT:-5s}"
+      AUDIT_REQUEST_TIMEOUT: "${AUDIT_REQUEST_TIMEOUT:-10s}"
+      AUDIT_MAX_RESPONSE_BYTES: "${AUDIT_MAX_RESPONSE_BYTES:-2097152}"
+      AUDIT_MAX_REDIRECTS: "${AUDIT_MAX_REDIRECTS:-5}"
+      BOOTSTRAP_ADMIN_EMAIL: "${BOOTSTRAP_ADMIN_EMAIL:-admin@webcare.local}"
+      BOOTSTRAP_ADMIN_PASSWORD: "${BOOTSTRAP_ADMIN_PASSWORD:?Set BOOTSTRAP_ADMIN_PASSWORD in .env.prod}"
+      BOOTSTRAP_SPECIALIST_EMAIL: "${BOOTSTRAP_SPECIALIST_EMAIL:-specialist@webcare.local}"
+      BOOTSTRAP_SPECIALIST_PASSWORD: "${BOOTSTRAP_SPECIALIST_PASSWORD:?Set BOOTSTRAP_SPECIALIST_PASSWORD in .env.prod}"
+      BOOTSTRAP_VIEWER_EMAIL: "${BOOTSTRAP_VIEWER_EMAIL:-viewer@webcare.local}"
+      BOOTSTRAP_VIEWER_PASSWORD: "${BOOTSTRAP_VIEWER_PASSWORD:?Set BOOTSTRAP_VIEWER_PASSWORD in .env.prod}"
+    expose:
+      - "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    stop_grace_period: 30s
+    networks:
+      - database
+      - application
+    logging: *default-logging
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - application
+    logging: *default-logging
+
+  caddy:
+    image: caddy:2.11.4-alpine
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: "${APP_DOMAIN:?Set APP_DOMAIN in .env.prod}"
+      ACME_EMAIL: "${ACME_EMAIL:?Set ACME_EMAIL in .env.prod}"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - application
+    logging: *default-logging
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  database:
+    internal: true
+  application:
+    driver: bridge
