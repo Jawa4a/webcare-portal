@@ -172,7 +172,7 @@ function LoginPage({ onAuthenticated }: { onAuthenticated: (user: PortalUser) =>
       <section className="login-card" aria-labelledby="login-title">
         <span className="eyebrow">WebCare Portal · MVP</span>
         <h2 id="login-title">Вход в систему</h2>
-        <p>Используйте рабочую или одну из локальных демонстрационных учётных записей.</p>
+        <p>Выберите одну из публичных демонстрационных ролей или введите данные вручную.</p>
 
         {error && <div className="alert error" role="alert">{error}</div>}
 
@@ -195,7 +195,7 @@ function LoginPage({ onAuthenticated }: { onAuthenticated: (user: PortalUser) =>
               }}>{account.label}</button>
             ))}
           </div>
-          <small>Данные предназначены только для локального запуска и меняются через переменные окружения.</small>
+          <small>Кнопки заполняют публичные данные выбранной роли. Затем нажмите «Войти».</small>
         </div>
       </section>
     </main>

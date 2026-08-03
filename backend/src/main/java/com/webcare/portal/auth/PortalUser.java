@@ -86,6 +86,10 @@ public class PortalUser {
         return passwordHash;
     }
 
+    void updatePasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
     public String getDisplayName() {
         return displayName;
     }

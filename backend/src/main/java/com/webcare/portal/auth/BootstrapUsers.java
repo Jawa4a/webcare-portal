@@ -13,6 +13,8 @@ public class BootstrapUsers implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${webcare.demo.enabled:false}")
+    private boolean demoEnabled;
     @Value("${webcare.bootstrap.admin.email}")
     private String adminEmail;
     @Value("${webcare.bootstrap.admin.password}")
@@ -44,14 +46,19 @@ public class BootstrapUsers implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        createIfMissing(adminEmail, adminPassword, adminName, RoleCode.ADMIN);
-        createIfMissing(specialistEmail, specialistPassword, specialistName, RoleCode.SPECIALIST);
-        createIfMissing(viewerEmail, viewerPassword, viewerName, RoleCode.VIEWER);
+        createOrSynchronize(adminEmail, adminPassword, adminName, RoleCode.ADMIN);
+        createOrSynchronize(specialistEmail, specialistPassword, specialistName, RoleCode.SPECIALIST);
+        createOrSynchronize(viewerEmail, viewerPassword, viewerName, RoleCode.VIEWER);
     }
 
-    private void createIfMissing(String email, String password, String name, RoleCode roleCode) {
+    private void createOrSynchronize(String email, String password, String name, RoleCode roleCode) {
         String normalizedEmail = email.trim().toLowerCase();
-        if (userRepository.findByEmailIgnoreCase(normalizedEmail).isPresent()) {
+        var existingUser = userRepository.findByEmailIgnoreCase(normalizedEmail);
+        if (existingUser.isPresent()) {
+            PortalUser user = existingUser.orElseThrow();
+            if (demoEnabled && !passwordEncoder.matches(password, user.getPasswordHash())) {
+                user.updatePasswordHash(passwordEncoder.encode(password));
+            }
             return;
         }
         Role role = roleRepository.findByCode(roleCode)

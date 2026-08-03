@@ -47,6 +47,8 @@ info:
     stage: mvp-ready
 
 webcare:
+  demo:
+    enabled: ${DEMO_MODE:false}
   audit:
     allow-private-addresses: ${AUDIT_ALLOW_PRIVATE_ADDRESSES:false}
     max-runtime: ${AUDIT_MAX_RUNTIME:60s}
