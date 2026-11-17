@@ -1,79 +1,93 @@
 # WebCare Portal
 
-Портал для безопасного технического и SEO-мониторинга сайтов. MVP завершён: авторизация, ролевой доступ, реестр сайтов, защищённый фоновый обход, технические проверки, сравнение результатов, задачи обслуживания и воспроизводимый тестовый контур.
+A web application for technical and SEO monitoring of websites. The implemented MVP includes authentication, role-based access, a website registry, background crawling with URL safety checks, technical audits, result comparison, maintenance tasks, and a reproducible test environment.
 
-## Быстрый запуск
+## Tech stack
 
-Требуется Docker Desktop с поддержкой Docker Compose.
+- **Backend:** Java, Spring Boot, REST API
+- **Frontend:** React, TypeScript
+- **Database:** PostgreSQL
+- **Environment:** Docker Compose
+- **Public deployment:** Caddy with automatic HTTPS
+
+## Quick start
+
+Requires Docker Desktop with Docker Compose support.
 
 ```bash
 docker compose up --build
 ```
 
-После запуска доступны:
+Once the environment is running:
 
-- интерфейс: <http://localhost:3000>;
-- API состояния: <http://localhost:3000/api/health>;
-- технический health-check: <http://localhost:3000/actuator/health>;
-- PostgreSQL: `localhost:5432`.
+- Web interface: <http://localhost:3000>
+- Application health API: <http://localhost:3000/api/health>
+- Technical health check: <http://localhost:3000/actuator/health>
+- PostgreSQL: `localhost:5432`
 
-Для собственных параметров скопируйте `.env.example` в `.env` и замените необходимые значения. Файл `.env` не попадает в Git.
+To customise the configuration, copy `.env.example` to `.env` and update the required values. The `.env` file is excluded from Git.
 
-Публичные демонстрационные учётные записи:
+### Demo accounts
 
-| Роль | Email | Пароль |
-|---|---|---|
-| Администратор | `admin@webcare.local` | `WebcareAdmin!2026` |
-| Специалист | `specialist@webcare.local` | `WebcareSpecialist!2026` |
-| Наблюдатель | `viewer@webcare.local` | `WebcareViewer!2026` |
+| Role | Email | Password |
+| --- | --- | --- |
+| Administrator | `admin@webcare.local` | `WebcareAdmin!2026` |
+| Specialist | `specialist@webcare.local` | `WebcareSpecialist!2026` |
+| Viewer | `viewer@webcare.local` | `WebcareViewer!2026` |
 
-Кнопки «Демо-роли» используют эти же данные. В Docker Compose включён demo-режим: при каждом запуске пароли трёх стартовых пользователей синхронизируются с указанными значениями, в том числе для уже существующей базы. Эти данные намеренно публичны и не подходят для реальной системы.
+The demo role buttons use these same credentials. Demo mode is enabled in Docker Compose: on each startup, the passwords of the three initial users are synchronised with the values above, including when the database already exists. These credentials are intentionally public and must not be used in a production system.
 
-Остановка окружения:
+### Stop the environment
 
 ```bash
 docker compose down
 ```
 
-Данные PostgreSQL сохраняются в именованном Docker-томе. Для удаления данных явно выполните `docker compose down --volumes`.
+PostgreSQL data is retained in a named Docker volume. To delete the data as well, explicitly run `docker compose down --volumes`.
 
-## Публичное развёртывание
+## Public deployment
 
-Для Linux VM подготовлен отдельный production-контур с Caddy и автоматическим HTTPS. Он публикует только порты `80/443`; PostgreSQL, backend и frontend остаются во внутренних Docker-сетях. Используйте `compose.prod.yaml`, заполните домен, email ACME и секретный пароль PostgreSQL в `.env.prod` по шаблону `.env.prod.example`, затем следуйте [руководству по развёртыванию на Azure или DigitalOcean](docs/deployment.md).
+A separate production configuration is provided for a Linux VM, using Caddy with automatic HTTPS. Only ports `80/443` are exposed; PostgreSQL, the backend, and the frontend remain on internal Docker networks.
 
-## Документация
+Use `compose.prod.yaml`. Create `.env.prod` from `.env.prod.example` and set the domain, ACME email address, and a secret PostgreSQL password. Then follow the [Azure or DigitalOcean deployment guide](docs/deployment.md).
 
-- [Требования и пользовательские сценарии](docs/requirements.md)
-- [Архитектура приложения](docs/architecture.md)
-- [Модель базы данных](docs/database.md)
-- [Контракт API](docs/api.md)
-- [Реализация второго этапа](docs/stage-2.md)
-- [Реализация третьего этапа](docs/stage-3.md)
-- [Реализация четвёртого этапа](docs/stage-4.md)
-- [Реализация пятого этапа](docs/stage-5.md)
-- [Установка и обновление](docs/installation.md)
-- [Публичное развёртывание](docs/deployment.md)
-- [Руководство пользователя](docs/user-guide.md)
-- [Автоматические тесты](docs/testing.md)
-- [Эксплуатация и диагностика](docs/operations.md)
+## Documentation
 
-## Структура
+The supporting documentation is currently in Russian.
+
+- [Requirements and user scenarios](docs/requirements.md)
+- [Application architecture](docs/architecture.md)
+- [Database model](docs/database.md)
+- [API contract](docs/api.md)
+- [Stage 2 implementation](docs/stage-2.md)
+- [Stage 3 implementation](docs/stage-3.md)
+- [Stage 4 implementation](docs/stage-4.md)
+- [Stage 5 implementation](docs/stage-5.md)
+- [Installation and updates](docs/installation.md)
+- [Public deployment](docs/deployment.md)
+- [User guide](docs/user-guide.md)
+- [Automated tests](docs/testing.md)
+- [Operations and troubleshooting](docs/operations.md)
+
+## Repository structure
 
 ```text
-backend/       Spring Boot REST API, URL-политика, аудиты, сравнение и задачи
-frontend/      React + TypeScript, сайты, результаты, сравнение и рабочая очередь
-infra/         конфигурация reverse proxy
-docs/          требования и проектные решения
-test-sites/    место для контролируемых сценариев проверки аудита
-compose.yaml   единый запуск frontend, backend и PostgreSQL
-compose.prod.yaml  production-запуск с Caddy и HTTPS
+backend/           Spring Boot REST API, URL policy, audits, comparisons, and tasks
+frontend/          React + TypeScript, websites, results, comparisons, and work queue
+infra/             Reverse proxy configuration
+docs/              Requirements and design decisions
+test-sites/        Controlled website audit scenarios
+compose.yaml       Combined frontend, backend, and PostgreSQL environment
+compose.prod.yaml  Production environment with Caddy and HTTPS
 ```
 
-## Статус MVP
+## MVP status and testing
 
-Реализованы критерии из общего плана. Unit-тесты проверяют правила аудита, сравнение и URL-политику; integration-профиль запускает отдельную PostgreSQL и контролируемый сайт, затем выполняет полный REST-сценарий. Автоматические аудиты по расписанию, уведомления и экспорт отчётов остаются за границей MVP.
+The acceptance criteria in the overall project plan have been implemented. Unit tests cover audit rules, result comparison, and URL policy. The integration profile starts a separate PostgreSQL instance and a controlled test website, then runs an end-to-end REST scenario.
 
-Полная проверка тестового контура:
+Scheduled audits, notifications, and report exports are outside the scope of the MVP.
+
+To run the full test environment:
 
 ```bash
 docker compose -f compose.test.yaml up --abort-on-container-exit --exit-code-from backend-tests
